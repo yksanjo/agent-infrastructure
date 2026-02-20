@@ -1,0 +1,30 @@
+{
+  "name": "advanced-tools",
+  "version": "1.0.0",
+  "description": "Advanced tools - Web scraper, Code interpreter, Database, API integrations",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "web-scraper",
+    "code-interpreter",
+    "database",
+    "api-integration",
+    "tools"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "cheerio": "^1.0.0-rc.12",
+    "better-sqlite3": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/advanced-tools"
+  }
+}

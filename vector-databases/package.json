@@ -1,0 +1,36 @@
+{
+  "name": "vector-databases",
+  "version": "1.0.0",
+  "description": "Vector database integration - ChromaDB, Pinecone, Weaviate, Qdrant",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "vector",
+    "database",
+    "chromadb",
+    "pinecone",
+    "weaviate",
+    "qdrant",
+    "embeddings",
+    "similarity-search"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "dependencies": {
+    "chromadb": "^1.8.0",
+    "@pinecone-database/pinecone": "^2.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/vector-databases"
+  }
+}

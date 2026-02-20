@@ -1,0 +1,26 @@
+{
+  "name": "advanced-agent-patterns",
+  "version": "1.0.0",
+  "description": "Advanced agent patterns - ReAct, Plan-and-Execute, Self-Reflection",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "react",
+    "agent",
+    "planning",
+    "self-reflection",
+    "reasoning",
+    "ai-patterns"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/advanced-agent-patterns"
+  }
+}

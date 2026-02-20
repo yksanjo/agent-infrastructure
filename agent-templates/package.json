@@ -1,0 +1,25 @@
+{
+  "name": "agent-templates",
+  "version": "1.0.0",
+  "description": "Pre-built agent templates - Support, Research, Code Review, Data Analyst",
+  "type": "module",
+  "scripts": {
+    "start:support": "node customer-support/src/agent.js",
+    "start:research": "node research-assistant/src/agent.js",
+    "start:code": "node code-reviewer/src/agent.js",
+    "start:analyst": "node data-analyst/src/agent.js"
+  },
+  "keywords": [
+    "agent-templates",
+    "customer-support",
+    "research",
+    "code-review",
+    "data-analyst"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/agent-templates"
+  }
+}

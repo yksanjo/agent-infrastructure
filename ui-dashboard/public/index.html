@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Infrastructure Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      min-height: 100vh;
+    }
+    .header {
+      background: rgba(255,255,255,0.05);
+      padding: 1rem 2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5rem; background: linear-gradient(90deg, #00d9ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .status-indicator { display: flex; align-items: center; gap: 0.5rem; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff88; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; padding: 2rem; }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+    }
+    .card h2 { font-size: 1rem; color: #888; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+    .metric { font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+    .metric-label { color: #888; font-size: 0.9rem; }
+    .agent-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .agent-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      border-left: 3px solid #00ff88;
+    }
+    .agent-item.running { border-left-color: #00ff88; }
+    .agent-item.idle { border-left-color: #ffaa00; }
+    .agent-item.stopped { border-left-color: #ff4444; }
+    .agent-name { font-weight: 600; }
+    .agent-status { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; text-transform: uppercase; }
+    .agent-status.running { background: rgba(0,255,136,0.2); color: #00ff88; }
+    .agent-status.idle { background: rgba(255,170,0,0.2); color: #ffaa00; }
+    .agent-status.stopped { background: rgba(255,68,68,0.2); color: #ff4444; }
+    .log-container { max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Consolas', monospace; font-size: 0.8rem; }
+    .log-entry { padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .log-entry .time { color: #666; margin-right: 0.5rem; }
+    .log-entry .type { padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; margin-right: 0.5rem; }
+    .log-entry .type.info { background: rgba(0,217,255,0.2); color: #00d9ff; }
+    .log-entry .type.action { background: rgba(0,255,136,0.2); color: #00ff88; }
+    .log-entry .type.error { background: rgba(255,68,68,0.2); color: #ff4444; }
+    .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(90deg, #00d9ff, #00ff88); color: #000; }
+    .btn-danger { background: rgba(255,68,68,0.2); color: #ff4444; border: 1px solid #ff4444; }
+    .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+    .progress-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 1rem; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #00d9ff, #00ff88); transition: width 0.3s; }
+    .full-width { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🤖 Agent Infrastructure Dashboard</h1>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span>Connected</span>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- Metrics -->
+    <div class="card">
+      <h2>Total Tasks</h2>
+      <div class="metric" id="totalTasks">0</div>
+      <div class="metric-label">Tasks processed</div>
+    </div>
+    <div class="card">
+      <h2>Success Rate</h2>
+      <div class="metric" id="successRate">100%</div>
+      <div class="metric-label">Completion rate</div>
+    </div>
+    <div class="card">
+      <h2>Tokens Used</h2>
+      <div class="metric" id="totalTokens">0</div>
+      <div class="metric-label">Total tokens</div>
+    </div>
+    <div class="card">
+      <h2>Est. Cost</h2>
+      <div class="metric" id="totalCost">$0.00</div>
+      <div class="metric-label">Total cost</div>
+    </div>
+
+    <!-- Agents -->
+    <div class="card full-width">
+      <h2>Active Agents</h2>
+      <div class="agent-list" id="agentList">
+        <div class="agent-item">
+          <span class="agent-name">No agents registered</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="card full-width">
+      <h2>Live Logs</h2>
+      <div class="log-container" id="logContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    let ws;
+    let agents = [];
+    let metrics = { totalTasks: 0, completedTasks: 0, failedTasks: 0, totalTokens: 0, totalCost: 0 };
+
+    function connect() {
+      ws = new WebSocket(`ws://${window.location.host}/ws`);
+      
+      ws.onopen = () => console.log('Connected to dashboard');
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleUpdate(data);
+      };
+      
+      ws.onclose = () => setTimeout(connect, 3000);
+    }
+
+    function handleUpdate(data) {
+      switch (data.type) {
+        case 'init':
+          agents = data.agents;
+          metrics = data.metrics;
+          break;
+        case 'agent-registered':
+        case 'agent-update':
+          const idx = agents.findIndex(a => a.id === data.agent.id);
+          if (idx >= 0) agents[idx] = data.agent;
+          else agents.push(data.agent);
+          break;
+        case 'metrics-update':
+          metrics = data.metrics;
+          break;
+        case 'log':
+          addLogEntry(data.log);
+          break;
+      }
+      render();
+    }
+
+    function render() {
+      // Update metrics
+      document.getElementById('totalTasks').textContent = metrics.totalTasks;
+      document.getElementById('totalTokens').textContent = metrics.totalTokens.toLocaleString();
+      document.getElementById('totalCost').textContent = `$${metrics.totalCost.toFixed(4)}`;
+      
+      const successRate = metrics.totalTasks > 0 
+        ? Math.round((metrics.completedTasks / metrics.totalTasks) * 100) 
+        : 100;
+      document.getElementById('successRate').textContent = `${successRate}%`;
+
+      // Update agents
+      const agentList = document.getElementById('agentList');
+      if (agents.length === 0) {
+        agentList.innerHTML = '<div class="agent-item"><span class="agent-name">No agents registered</span></div>';
+      } else {
+        agentList.innerHTML = agents.map(agent => `
+          <div class="agent-item ${agent.status}">
+            <div>
+              <div class="agent-name">${agent.name}</div>
+              <div style="font-size: 0.75rem; color: #888;">${agent.type} • Tasks: ${agent.tasksCompleted}</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="agent-status ${agent.status}">${agent.status}</span>
+              <button class="btn ${agent.status === 'running' ? 'btn-danger' : 'btn-primary'}" 
+                      onclick="agentAction('${agent.id}', '${agent.status === 'running' ? 'stop' : 'start'}')">
+                ${agent.status === 'running' ? 'Stop' : 'Start'}
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function addLogEntry(log) {
+      const container = document.getElementById('logContainer');
+      const time = new Date(log.timestamp).toLocaleTimeString();
+      const type = log.type || 'info';
+      
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `
+        <span class="time">${time}</span>
+        <span class="type ${type}">${type}</span>
+        <span>${log.message || JSON.stringify(log)}</span>
+      `;
+      
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+      
+      // Limit displayed logs
+      while (container.children.length > 100) {
+        container.removeChild(container.firstChild);
+      }
+    }
+
+    function agentAction(agentId, action) {
+      fetch(`/api/agents/${agentId}/${action}`, { method: 'POST' });
+    }
+
+    connect();
+  </script>
+</body>
+</html>
