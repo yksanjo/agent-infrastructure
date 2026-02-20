@@ -8,10 +8,13 @@
 import { Command } from 'commander';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { existsSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, readFileSync, copyFileSync } from 'fs';
 import chalk from 'chalk';
 import ora from 'ora';
 import inquirer from 'inquirer';
+import { runLoop, interactiveMode } from './commands/loop.js';
+import { watchMode, staticView } from './commands/dashboard.js';
+import { startServer } from './commands/server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -201,20 +204,6 @@ program
     console.log(chalk.gray(`  Status: Running\n`));
   });
 
-// dashboard command
-program
-  .command('dashboard')
-  .description('Open the monitoring dashboard')
-  .option('-p, --port <port>', 'Dashboard port', '3000')
-  .action((options) => {
-    console.log(chalk.cyan('\n🖥️  Starting dashboard...\n'));
-    console.log(chalk.green(`Dashboard running at http://localhost:${options.port}`));
-    console.log(chalk.gray('Press Ctrl+C to stop\n'));
-    
-    // In production, would start the dashboard server
-    console.log(chalk.gray('(Dashboard server would start here)'));
-  });
-
 // create command
 program
   .command('create <type> <name>')
@@ -244,21 +233,60 @@ program
   .description('Show agent status')
   .action(() => {
     console.log(chalk.cyan('\n📊 Agent Status\n'));
-    
+
     console.log(chalk.white('Active Agents:'));
     console.log(chalk.gray('  • research-agent (running)'));
     console.log(chalk.gray('  • support-agent (idle)'));
     console.log(chalk.gray('  • analyst-agent (running)\n'));
-    
+
     console.log(chalk.white('Recent Activity:'));
     console.log(chalk.gray('  ✓ research-agent completed task #142'));
     console.log(chalk.gray('  • support-agent processing task #89'));
     console.log(chalk.gray('  ✓ analyst-agent completed task #56\n'));
-    
+
     console.log(chalk.white('Resource Usage:'));
     console.log(chalk.gray('  CPU: 23%'));
     console.log(chalk.gray('  Memory: 512MB / 2GB'));
     console.log(chalk.gray('  Tokens: 1.2M / 1M (month)\n'));
+  });
+
+// loop command - continuous repo creation
+program
+  .command('loop')
+  .description('Start continuous plan-build-push loop (10 MVP projects)')
+  .option('--dry-run', 'Dry run mode', false)
+  .option('-i, --interactive', 'Interactive mode', false)
+  .action(async (options) => {
+    if (options.interactive) {
+      await interactiveMode();
+    } else {
+      await runLoop({
+        dryRun: options.dryRun,
+      });
+    }
+  });
+
+// dashboard command - terminal dashboard
+program
+  .command('dashboard')
+  .description('View terminal dashboard')
+  .option('-w, --watch', 'Watch mode (auto-refresh)', false)
+  .action((options) => {
+    if (options.watch) {
+      watchMode();
+    } else {
+      staticView();
+    }
+  });
+
+// serve command - web dashboard server
+program
+  .command('serve')
+  .description('Start web dashboard server')
+  .option('-p, --port <port>', 'Dashboard port', '3456')
+  .action((options) => {
+    process.env.PORT = options.port;
+    startServer();
   });
 
 program.parse();

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Infrastructure Loop Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      padding: 30px 0;
+      border-bottom: 2px solid rgba(255,255,255,0.1);
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .subtitle {
+      color: #8892b0;
+      font-size: 1.1rem;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,217,255,0.2);
+    }
+    
+    .stat-value {
+      font-size: 3rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .stat-label {
+      color: #8892b0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .progress-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .progress-bar-container {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      height: 30px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 15px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    
+    .project-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 25px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.3s;
+    }
+    
+    .project-card:hover {
+      border-color: #00d9ff;
+      box-shadow: 0 5px 20px rgba(0,217,255,0.2);
+    }
+    
+    .project-card.completed {
+      border-color: #00ff88;
+      background: rgba(0,255,136,0.05);
+    }
+    
+    .project-card.failed {
+      border-color: #ff4757;
+      background: rgba(255,71,87,0.05);
+    }
+    
+    .project-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .project-icon {
+      font-size: 2rem;
+    }
+    
+    .project-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      flex: 1;
+    }
+    
+    .project-status {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .status-pending {
+      background: rgba(255,255,255,0.1);
+      color: #8892b0;
+    }
+    
+    .status-completed {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
+    }
+    
+    .status-failed {
+      background: rgba(255,71,87,0.2);
+      color: #ff4757;
+    }
+    
+    .project-details {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .detail {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #8892b0;
+      font-size: 0.9rem;
+    }
+    
+    .language-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    
+    .lang-typescript { background: rgba(50,150,255,0.2); color: #3299ff; }
+    .lang-go { background: rgba(0,217,255,0.2); color: #00d9ff; }
+    .lang-python { background: rgba(255,217,0,0.2); color: #ffd900; }
+    .lang-rust { background: rgba(255,100,100,0.2); color: #ff6464; }
+    
+    .project-link {
+      display: block;
+      color: #00d9ff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 10px;
+      background: rgba(0,217,255,0.1);
+      border-radius: 8px;
+      text-align: center;
+      transition: background 0.3s;
+    }
+    
+    .project-link:hover {
+      background: rgba(0,217,255,0.2);
+    }
+    
+    .project-link.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    .refresh-info {
+      text-align: center;
+      color: #8892b0;
+      margin-top: 30px;
+      font-size: 0.9rem;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #8892b0;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .loading {
+      animation: pulse 1.5s infinite;
+    }
+    
+    .log-section {
+      margin-top: 40px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .log-entry {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .log-success { color: #00ff88; }
+    .log-error { color: #ff4757; }
+    .log-info { color: #00d9ff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 AI Infrastructure Loop</h1>
+      <p class="subtitle">Plan → Build → Push | Target: github.com/yksanjo</p>
+    </header>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalProjects">0</div>
+        <div class="stat-label">Total Projects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="completedProjects">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="successRate">0%</div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="lastUpdate">-</div>
+        <div class="stat-label">Last Update</div>
+      </div>
+    </div>
+    
+    <div class="progress-section">
+      <div class="progress-header">
+        <h2>Overall Progress</h2>
+        <span id="progressText">0/10</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar">0%</div>
+      </div>
+    </div>
+    
+    <h2 style="margin-bottom: 20px;">Projects</h2>
+    <div class="projects-grid" id="projectsGrid">
+      <div class="loading">Loading projects...</div>
+    </div>
+    
+    <div class="log-section">
+      <h3 style="margin-bottom: 15px;">Activity Log</h3>
+      <div id="logContainer"></div>
+    </div>
+    
+    <div class="refresh-info">
+      Auto-refreshes every 3 seconds | Press F5 to manually refresh
+    </div>
+  </div>
+  
+  <script>
+    const projects = [
+      { name: 'agent-waf', language: 'typescript', icon: '🔒' },
+      { name: 'agent-observability', language: 'go', icon: '📊' },
+      { name: 'agent-gateway', language: 'rust', icon: '🌐' },
+      { name: 'agent-memory-store', language: 'python', icon: '💾' },
+      { name: 'agent-orchestrator', language: 'typescript', icon: '🎯' },
+      { name: 'agent-registry', language: 'go', icon: '📋' },
+      { name: 'agent-policy-engine', language: 'rust', icon: '🛡️' },
+      { name: 'agent-cache', language: 'python', icon: '⚡' },
+      { name: 'agent-queue', language: 'typescript', icon: '📨' },
+      { name: 'agent-config', language: 'go', icon: '⚙️' },
+    ];
+    
+    const GITHUB_ORG = 'yksanjo';
+    
+    async function loadLogs() {
+      try {
+        const response = await fetch('/logs.json');
+        if (!response.ok) throw new Error('No logs yet');
+        const logs = await response.json();
+        return logs;
+      } catch {
+        return [];
+      }
+    }
+    
+    function renderDashboard(logs) {
+      const completed = logs.length;
+      const success = logs.filter(l => l.result?.success).length;
+      const rate = completed > 0 ? Math.round((success / completed) * 100) : 0;
+      
+      // Update stats
+      document.getElementById('totalProjects').textContent = projects.length;
+      document.getElementById('completedProjects').textContent = success;
+      document.getElementById('successRate').textContent = rate + '%';
+      
+      const lastUpdate = logs[logs.length - 1]?.timestamp;
+      document.getElementById('lastUpdate').textContent = lastUpdate 
+        ? new Date(lastUpdate).toLocaleTimeString()
+        : '-';
+      
+      // Update progress bar
+      const percent = Math.min(100, Math.round((completed / projects.length) * 100));
+      document.getElementById('progressBar').style.width = percent + '%';
+      document.getElementById('progressBar').textContent = percent + '%';
+      document.getElementById('progressText').textContent = `${completed}/${projects.length}`;
+      
+      // Render projects
+      const grid = document.getElementById('projectsGrid');
+      grid.innerHTML = '';
+      
+      projects.forEach((project, index) => {
+        const log = logs[index];
+        const status = log ? (log.result?.success ? 'completed' : 'failed') : 'pending';
+        const url = log?.result?.url || `https://github.com/${GITHUB_ORG}/agent-infra-${project.name}`;
+        
+        const card = document.createElement('div');
+        card.className = `project-card ${status}`;
+        card.innerHTML = `
+          <div class="project-header">
+            <span class="project-icon">${project.icon}</span>
+            <span class="project-name">${project.name}</span>
+            <span class="project-status status-${status}">${status}</span>
+          </div>
+          <div class="project-details">
+            <span class="detail">
+              <span class="language-badge lang-${project.language}">${project.language.toUpperCase()}</span>
+            </span>
+            ${log ? `<span class="detail">⏱️ ${Math.round(log.duration / 1000)}s</span>` : ''}
+          </div>
+          <a href="${url}" target="_blank" class="project-link ${status === 'pending' ? 'disabled' : ''}">
+            ${status === 'pending' ? 'Coming soon...' : 'View on GitHub →'}
+          </a>
+        `;
+        grid.appendChild(card);
+      });
+      
+      // Render logs
+      const logContainer = document.getElementById('logContainer');
+      logContainer.innerHTML = logs.slice(-10).reverse().map(log => {
+        const time = new Date(log.timestamp).toLocaleTimeString();
+        const project = log.project || 'Unknown';
+        const success = log.result?.success;
+        return `
+          <div class="log-entry ${success ? 'log-success' : 'log-error'}">
+            [${time}] ${project}: ${success ? '✓ SUCCESS' : '✗ FAILED'} (${Math.round(log.duration / 1000)}s)
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Initial load
+    loadLogs().then(renderDashboard);
+    
+    // Auto-refresh
+    setInterval(() => {
+      loadLogs().then(renderDashboard);
+    }, 3000);
+  </script>
+</body>
+</html>
