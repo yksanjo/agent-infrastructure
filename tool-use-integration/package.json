@@ -1,0 +1,26 @@
+{
+  "name": "tool-use-integration",
+  "version": "1.0.0",
+  "description": "Tool integration and MCP protocol implementation for AI agents",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "tools",
+    "mcp",
+    "model-context-protocol",
+    "integration",
+    "zapier",
+    "n8n"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/tool-use-integration"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "core-agent-frameworks",
+  "version": "1.0.0",
+  "description": "Core frameworks for building LLM-powered autonomous agents",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "agent",
+    "llm",
+    "langchain",
+    "autogen",
+    "crewai",
+    "ai-framework"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "dependencies": {
+    "langchain": "^0.1.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/core-agent-frameworks"
+  },
+  "bugs": {
+    "url": "https://github.com/yksanjo/agent-infrastructure/issues"
+  },
+  "homepage": "https://github.com/yksanjo/agent-infrastructure/tree/main/core-agent-frameworks#readme"
+}

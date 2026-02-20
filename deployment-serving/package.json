@@ -1,0 +1,27 @@
+{
+  "name": "deployment-serving",
+  "version": "1.0.0",
+  "description": "Deployment and serving infrastructure for LLM models and agents",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "deployment",
+    "serving",
+    "vllm",
+    "tgi",
+    "bentoml",
+    "modal",
+    "llm-serving"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/deployment-serving"
+  }
+}

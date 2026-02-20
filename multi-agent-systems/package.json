@@ -1,0 +1,26 @@
+{
+  "name": "multi-agent-systems",
+  "version": "1.0.0",
+  "description": "Multi-agent collaboration and communication frameworks",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "multi-agent",
+    "autogen",
+    "chatdev",
+    "agentverse",
+    "camel",
+    "collaboration"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/multi-agent-systems"
+  }
+}

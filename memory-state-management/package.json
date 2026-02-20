@@ -1,0 +1,28 @@
+{
+  "name": "memory-state-management",
+  "version": "1.0.0",
+  "description": "Memory and state management for AI agents with vector store support",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "memory",
+    "vector-store",
+    "chroma",
+    "pinecone",
+    "weaviate",
+    "qdrant",
+    "redis",
+    "agent-state"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/memory-state-management"
+  }
+}

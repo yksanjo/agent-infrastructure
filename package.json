@@ -1,0 +1,47 @@
+{
+  "name": "agent-infrastructure",
+  "version": "1.0.0",
+  "description": "Complete infrastructure for building production-grade AI agent systems",
+  "private": true,
+  "workspaces": [
+    "core-agent-frameworks",
+    "agent-orchestration",
+    "memory-state-management",
+    "evaluation-testing",
+    "deployment-serving",
+    "multi-agent-systems",
+    "tool-use-integration"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces",
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "rm -rf node_modules && rm -rf */node_modules"
+  },
+  "keywords": [
+    "agent",
+    "llm",
+    "ai",
+    "langchain",
+    "autogen",
+    "crewai",
+    "multi-agent",
+    "orchestration",
+    "vector-store",
+    "mcp"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yksanjo/agent-infrastructure/issues"
+  },
+  "homepage": "https://github.com/yksanjo/agent-infrastructure#readme",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

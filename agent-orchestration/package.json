@@ -1,0 +1,32 @@
+{
+  "name": "agent-orchestration",
+  "version": "1.0.0",
+  "description": "Workflow orchestration for multi-agent systems and AI pipelines",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js",
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "orchestration",
+    "workflow",
+    "langgraph",
+    "prefect",
+    "airflow",
+    "agent-pipeline"
+  ],
+  "author": "Yoshi Kondo <yoshi@musicailab.com>",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksanjo/agent-infrastructure/tree/main/agent-orchestration"
+  }
+}
