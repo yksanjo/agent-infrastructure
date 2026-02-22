@@ -1,0 +1,13 @@
+# Python AI/ML Agents
+openai>=1.0.0
+anthropic>=0.18.0
+langchain>=0.1.0
+langgraph>=0.0.20
+chromadb>=0.4.0
+pinecone-client>=3.0.0
+qdrant-client>=1.7.0
+pypdf>=4.0.0
+python-dotenv>=1.0.0
+aiohttp>=3.9.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
