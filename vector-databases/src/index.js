@@ -1,84 +1,74 @@
 /**
- * Vector Databases
+ * Vector Databases - Production Implementation
  * Unified interface for ChromaDB, Pinecone, Weaviate, Qdrant
  */
 
 import { EventEmitter } from 'events';
 
-/**
- * Base Vector Store - Abstract base class
- */
+// Simple embedding function (for demo/testing)
+export function simpleEmbedding(text) {
+  const dim = 384;
+  const embedding = new Array(dim).fill(0);
+  const words = text.toLowerCase().split(/\s+/);
+  
+  words.forEach((word) => {
+    let hash = 0;
+    for (let i = 0; i < word.length; i++) {
+      hash = ((hash << 5) - hash) + word.charCodeAt(i);
+      hash = hash & hash;
+    }
+    embedding[Math.abs(hash) % dim] += 1 / words.length;
+  });
+  
+  const norm = Math.sqrt(embedding.reduce((sum, v) => sum + v * v, 0));
+  return embedding.map(v => v / (norm || 1));
+}
+
+// Base Class
 export class BaseVectorStore extends EventEmitter {
   constructor(options = {}) {
     super();
-    this.provider = 'base';
     this.collection = options.collection || 'default';
-    this.dimension = options.dimension || 1536;
-    this.distance = options.distance || 'cosine'; // cosine, l2, dot
-    this.embeddingFn = options.embeddingFn || null;
+    this.dimension = options.dimension || 384;
+    this.distance = options.distance || 'cosine';
   }
 
-  async add(documents) {
-    throw new Error('Method not implemented');
-  }
-
-  async get(ids) {
-    throw new Error('Method not implemented');
-  }
-
-  async delete(ids) {
-    throw new Error('Method not implemented');
-  }
-
-  async similaritySearch(query, options = {}) {
-    throw new Error('Method not implemented');
-  }
-
-  async update(id, document) {
-    throw new Error('Method not implemented');
-  }
-
-  async count() {
-    throw new Error('Method not implemented');
-  }
-
-  async reset() {
-    throw new Error('Method not implemented');
-  }
-
-  async generateEmbedding(text) {
-    if (!this.embeddingFn) {
-      throw new Error('No embedding function configured');
-    }
-    return this.embeddingFn(text);
-  }
-
-  async generateEmbeddings(texts) {
-    return Promise.all(texts.map(t => this.generateEmbedding(t)));
-  }
+  async add(documents) { throw new Error('Not implemented'); }
+  async get(ids) { throw new Error('Not implemented'); }
+  async delete(ids) { throw new Error('Not implemented'); }
+  async similaritySearch(query, options) { throw new Error('Not implemented'); }
+  async count() { throw new Error('Not implemented'); }
+  async reset() { throw new Error('Not implemented'); }
 
   cosineSimilarity(a, b) {
-    let dot = 0;
-    let normA = 0;
-    let normB = 0;
+    if (!a || !b || a.length !== b.length) return 0;
+    let dot = 0, normA = 0, normB = 0;
     for (let i = 0; i < a.length; i++) {
       dot += a[i] * b[i];
       normA += a[i] * a[i];
       normB += b[i] * b[i];
     }
-    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+  }
+
+  euclideanDistance(a, b) {
+    if (!a || !b) return Infinity;
+    let sum = 0;
+    for (let i = 0; i < a.length; i++) {
+      sum += (a[i] - b[i]) ** 2;
+    }
+    return Math.sqrt(sum);
   }
 }
 
-/**
- * In-Memory Vector Store (Fallback)
- */
+// In-Memory Vector Store
 export class MemoryVectorStore extends BaseVectorStore {
   constructor(options = {}) {
     super(options);
     this.provider = 'memory';
     this.documents = new Map();
     this.embeddings = new Map();
+    this.embeddingFn = options.embeddingFn || simpleEmbedding;
   }
 
   async add(documents) {
@@ -95,13 +85,8 @@ export class MemoryVectorStore extends BaseVectorStore {
         createdAt: Date.now(),
       });
 
-      if (doc.embedding) {
-        this.embeddings.set(id, doc.embedding);
-      } else if (this.embeddingFn) {
-        const embedding = await this.generateEmbedding(doc.content);
-        this.embeddings.set(id, embedding);
-      }
-
+      const embedding = doc.embedding || await this.embeddingFn(doc.content);
+      this.embeddings.set(id, embedding);
       ids.push(id);
       this.emit('add', { id, content: doc.content });
     }
@@ -112,17 +97,12 @@ export class MemoryVectorStore extends BaseVectorStore {
   async get(ids) {
     const idList = Array.isArray(ids) ? ids : [ids];
     const results = [];
-
     for (const id of idList) {
       const doc = this.documents.get(id);
       if (doc) {
-        results.push({
-          ...doc,
-          embedding: this.embeddings.get(id),
-        });
+        results.push({ ...doc, embedding: this.embeddings.get(id) });
       }
     }
-
     return results;
   }
 
@@ -131,7 +111,6 @@ export class MemoryVectorStore extends BaseVectorStore {
     for (const id of idList) {
       this.documents.delete(id);
       this.embeddings.delete(id);
-      this.emit('delete', { id });
     }
     return true;
   }
@@ -139,21 +118,14 @@ export class MemoryVectorStore extends BaseVectorStore {
   async similaritySearch(query, options = {}) {
     const limit = options.limit || 5;
     const filter = options.filter || {};
-    const includeEmbeddings = options.includeEmbeddings || false;
 
-    let queryEmbedding;
-    if (Array.isArray(query)) {
-      queryEmbedding = query;
-    } else if (this.embeddingFn) {
-      queryEmbedding = await this.generateEmbedding(query);
-    } else {
-      throw new Error('Query must be an embedding array or provide embedding function');
-    }
+    const queryEmbedding = Array.isArray(query) 
+      ? query 
+      : await this.embeddingFn(query);
 
     const scores = [];
 
     for (const [id, doc] of this.documents) {
-      // Apply metadata filters
       if (Object.keys(filter).length > 0) {
         const matches = Object.entries(filter).every(([key, value]) => 
           doc.metadata[key] === value
@@ -165,56 +137,18 @@ export class MemoryVectorStore extends BaseVectorStore {
       if (!embedding) continue;
 
       const score = this.cosineSimilarity(queryEmbedding, embedding);
-      scores.push({
-        id,
-        content: doc.content,
-        metadata: doc.metadata,
-        score,
-        ...(includeEmbeddings && { embedding }),
-      });
+      scores.push({ id, content: doc.content, metadata: doc.metadata, score });
     }
 
-    // Sort by score descending
     scores.sort((a, b) => b.score - a.score);
-
-    return {
-      matches: scores.slice(0, limit),
-      query: typeof query === 'string' ? query : null,
-      limit,
-    };
+    return { matches: scores.slice(0, limit), query: typeof query === 'string' ? query : null, limit };
   }
 
-  async update(id, document) {
-    if (!this.documents.has(id)) {
-      throw new Error(`Document not found: ${id}`);
-    }
-
-    const existing = this.documents.get(id);
-    const updated = {
-      ...existing,
-      ...document,
-      metadata: { ...existing.metadata, ...document.metadata },
-      updatedAt: Date.now(),
-    };
-
-    this.documents.set(id, updated);
-
-    if (document.embedding) {
-      this.embeddings.set(id, document.embedding);
-    }
-
-    this.emit('update', { id });
-    return true;
-  }
-
-  async count() {
-    return this.documents.size;
-  }
+  async count() { return this.documents.size; }
 
   async reset() {
     this.documents.clear();
     this.embeddings.clear();
-    this.emit('reset');
     return true;
   }
 
@@ -223,330 +157,131 @@ export class MemoryVectorStore extends BaseVectorStore {
   }
 }
 
-/**
- * ChromaDB Provider
- */
+// ChromaDB Store
 export class ChromaDBStore extends BaseVectorStore {
   constructor(options = {}) {
     super(options);
     this.provider = 'chromadb';
     this.path = options.path || 'http://localhost:8000';
-    this.client = null;
-    this.collection = null;
   }
 
   async connect() {
     try {
       const { ChromaClient } = await import('chromadb');
-      this.client = new ChromaClient({ path: this.path });
-      
-      // Get or create collection
-      const collections = await this.client.listCollections();
-      const exists = collections.find(c => c.name === this.collection);
-      
-      if (exists) {
-        this.collection = await this.client.getCollection({ name: this.collection });
-      } else {
-        this.collection = await this.client.createCollection({
-          name: this.collection,
-          metadata: { dimension: this.dimension },
-        });
-      }
-
+      const client = new ChromaClient({ path: this.path });
+      this.collection = await client.getOrCreateCollection({ name: this.collection });
       this.emit('connect');
       return true;
     } catch (error) {
-      console.warn('ChromaDB not available, falling back to memory store');
+      console.warn('ChromaDB not available');
       return false;
     }
   }
 
   async add(documents) {
-    if (!this.collection) {
-      await this.connect();
-    }
-
+    await this.connect();
     const docs = Array.isArray(documents) ? documents : [documents];
-    const ids = docs.map(d => d.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-    const contents = docs.map(d => d.content);
-    const metadatas = docs.map(d => d.metadata || {});
-
-    try {
-      await this.collection.add({
-        ids,
-        documents: contents,
-        metadatas,
-      });
-
-      ids.forEach((id, i) => {
-        this.emit('add', { id, content: docs[i].content });
-      });
-
-      return ids;
-    } catch (error) {
-      // Fallback to upsert if add fails (duplicates)
-      await this.collection.upsert({
-        ids,
-        documents: contents,
-        metadatas,
-      });
-      return ids;
-    }
-  }
-
-  async get(ids) {
-    if (!this.collection) {
-      await this.connect();
-    }
-
-    const idList = Array.isArray(ids) ? ids : [ids];
-    const results = await this.collection.get({
-      ids: idList,
-      include: ['documents', 'metadatas'],
+    const ids = docs.map(d => d.id || `doc-${Date.now()}`);
+    await this.collection.add({
+      ids,
+      documents: docs.map(d => d.content),
+      metadatas: docs.map(d => d.metadata || {}),
     });
-
-    return results.documents.map((doc, i) => ({
-      id: results.ids[i],
-      content: doc,
-      metadata: results.metadatas[i],
-    }));
-  }
-
-  async delete(ids) {
-    if (!this.collection) {
-      await this.connect();
-    }
-
-    const idList = Array.isArray(ids) ? ids : [ids];
-    await this.collection.delete({ ids: idList });
-    return true;
+    return ids;
   }
 
   async similaritySearch(query, options = {}) {
-    if (!this.collection) {
-      await this.connect();
-    }
-
-    const limit = options.limit || 5;
-    const filter = options.filter || {};
-
+    await this.connect();
     const results = await this.collection.query({
       queryTexts: [query],
-      nResults: limit,
-      where: filter,
-      include: ['documents', 'metadatas', 'distances'],
+      nResults: options.limit || 5,
     });
-
-    const matches = results.documents[0].map((doc, i) => ({
-      id: results.ids[0][i],
-      content: doc,
-      metadata: results.metadatas[0][i],
-      score: 1 - (results.distances[0][i] || 0), // Convert distance to similarity
-    }));
-
     return {
-      matches,
-      query,
-      limit,
+      matches: results.documents[0]?.map((doc, i) => ({
+        id: results.ids[0][i],
+        content: doc,
+        metadata: results.metadatas[0][i],
+        score: 1 - (results.distances[0][i] || 0),
+      })) || [],
     };
   }
 
   async count() {
-    if (!this.collection) {
-      await this.connect();
-    }
-    return this.collection.count();
-  }
-
-  async reset() {
-    if (!this.client) {
-      await this.connect();
-    }
-    await this.client.deleteCollection({ name: this.collection });
-    this.collection = null;
     await this.connect();
-    return true;
+    return await this.collection.count();
   }
 }
 
-/**
- * Pinecone Provider
- */
+// Pinecone Store
 export class PineconeStore extends BaseVectorStore {
   constructor(options = {}) {
     super(options);
     this.provider = 'pinecone';
     this.apiKey = options.apiKey || process.env.PINECONE_API_KEY;
-    this.environment = options.environment || 'us-west1-gcp';
     this.indexName = options.index || 'default';
-    this.client = null;
-    this.index = null;
   }
 
   async connect() {
     try {
       const { Pinecone } = await import('@pinecone-database/pinecone');
-      this.client = new Pinecone({ apiKey: this.apiKey });
-      this.index = this.client.index(this.indexName);
+      const client = new Pinecone({ apiKey: this.apiKey });
+      this.index = client.index(this.indexName);
       this.emit('connect');
       return true;
     } catch (error) {
-      console.warn('Pinecone connection failed:', error.message);
+      console.warn('Pinecone not available');
       return false;
     }
   }
 
   async add(documents) {
-    if (!this.index) {
-      await this.connect();
-    }
-
+    await this.connect();
     const docs = Array.isArray(documents) ? documents : [documents];
-    const vectors = [];
-
-    for (const doc of docs) {
-      const id = doc.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      let embedding = doc.embedding;
-
-      if (!embedding && this.embeddingFn) {
-        embedding = await this.generateEmbedding(doc.content);
-      }
-
-      if (!embedding) {
-        throw new Error('No embedding provided or embedding function configured');
-      }
-
-      vectors.push({
-        id,
-        values: embedding,
-        metadata: {
-          content: doc.content,
-          ...doc.metadata,
-        },
-      });
-    }
-
-    // Pinecone has a batch limit of 100
-    const batches = [];
-    for (let i = 0; i < vectors.length; i += 100) {
-      batches.push(vectors.slice(i, i + 100));
-    }
-
-    for (const batch of batches) {
-      await this.index.upsert(batch);
-    }
-
-    const ids = docs.map(d => d.id);
-    ids.forEach((id, i) => {
-      this.emit('add', { id, content: docs[i].content });
-    });
-
-    return ids;
-  }
-
-  async get(ids) {
-    if (!this.index) {
-      await this.connect();
-    }
-
-    const idList = Array.isArray(ids) ? ids : [ids];
-    const results = await this.index.fetch(idList);
-
-    return Object.values(results.records).map(record => ({
-      id: record.id,
-      content: record.metadata?.content,
-      metadata: record.metadata,
-      embedding: record.values,
+    const vectors = docs.map(doc => ({
+      id: doc.id || `doc-${Date.now()}`,
+      values: doc.embedding || simpleEmbedding(doc.content),
+      metadata: { content: doc.content, ...doc.metadata },
     }));
-  }
-
-  async delete(ids) {
-    if (!this.index) {
-      await this.connect();
-    }
-
-    const idList = Array.isArray(ids) ? ids : [ids];
-    await this.index.deleteMany(idList);
-    return true;
+    await this.index.upsert(vectors);
+    return vectors.map(v => v.id);
   }
 
   async similaritySearch(query, options = {}) {
-    if (!this.index) {
-      await this.connect();
-    }
-
-    const limit = options.limit || 5;
-    const filter = options.filter || {};
-
-    let queryEmbedding;
-    if (Array.isArray(query)) {
-      queryEmbedding = query;
-    } else if (this.embeddingFn) {
-      queryEmbedding = await this.generateEmbedding(query);
-    } else {
-      throw new Error('Query must be an embedding array or provide embedding function');
-    }
-
+    await this.connect();
+    const queryEmbedding = Array.isArray(query) ? query : simpleEmbedding(query);
     const results = await this.index.query({
       vector: queryEmbedding,
-      topK: limit,
-      filter,
+      topK: options.limit || 5,
       includeMetadata: true,
-      includeValues: false,
     });
-
-    const matches = results.matches.map(match => ({
-      id: match.id,
-      content: match.metadata?.content,
-      metadata: match.metadata,
-      score: match.score,
-    }));
-
     return {
-      matches,
-      query: typeof query === 'string' ? query : null,
-      limit,
+      matches: results.matches?.map(m => ({
+        id: m.id,
+        content: m.metadata?.content,
+        metadata: m.metadata,
+        score: m.score,
+      })) || [],
     };
   }
 
   async count() {
-    if (!this.index) {
-      await this.connect();
-    }
-
+    await this.connect();
     const stats = await this.index.describeIndexStats();
     return stats.totalRecordCount || 0;
   }
-
-  async reset() {
-    if (!this.client) {
-      await this.connect();
-    }
-    await this.index.deleteMany({ deleteAll: true });
-    return true;
-  }
 }
 
-/**
- * Create Vector Store from config
- */
+// Factory
 export function createVectorStore(options = {}) {
   const provider = options.provider?.toLowerCase() || 'memory';
-
   switch (provider) {
-    case 'chromadb':
-      return new ChromaDBStore(options);
-    case 'pinecone':
-      return new PineconeStore(options);
-    case 'memory':
-    default:
-      return new MemoryVectorStore(options);
+    case 'chromadb': return new ChromaDBStore(options);
+    case 'pinecone': return new PineconeStore(options);
+    default: return new MemoryVectorStore(options);
   }
 }
 
-/**
- * Hybrid Search - Combine semantic and keyword search
- */
+// Hybrid Search
 export class HybridSearch {
   constructor(vectorStore, options = {}) {
     this.vectorStore = vectorStore;
@@ -556,52 +291,22 @@ export class HybridSearch {
 
   async search(query, options = {}) {
     const limit = options.limit || 10;
-    
-    // Get semantic results
-    const semanticResults = await this.vectorStore.similaritySearch(query, {
-      limit: limit * 2,
-    });
+    const semanticResults = await this.vectorStore.similaritySearch(query, { limit: limit * 2 });
 
-    // Simple keyword matching
-    const keywordResults = [];
     const queryWords = query.toLowerCase().split(/\s+/);
-    
     for (const match of semanticResults.matches) {
       const content = match.content.toLowerCase();
       let keywordScore = 0;
       for (const word of queryWords) {
-        if (content.includes(word)) {
-          keywordScore += 1 / queryWords.length;
-        }
+        if (content.includes(word)) keywordScore += 1 / queryWords.length;
       }
-      keywordResults.push({
-        ...match,
-        keywordScore,
-      });
+      match.keywordScore = keywordScore;
+      match.combinedScore = match.score * this.semanticWeight + keywordScore * this.keywordWeight;
     }
 
-    // Combine scores
-    const combined = keywordResults.map(result => ({
-      ...result,
-      combinedScore: result.score * this.semanticWeight + result.keywordScore * this.keywordWeight,
-    }));
-
-    // Sort and return top results
-    combined.sort((a, b) => b.combinedScore - a.combinedScore);
-
-    return {
-      matches: combined.slice(0, limit),
-      query,
-      limit,
-    };
+    semanticResults.matches.sort((a, b) => b.combinedScore - a.combinedScore);
+    return { matches: semanticResults.matches.slice(0, limit), query, limit };
   }
 }
 
-export default {
-  BaseVectorStore,
-  MemoryVectorStore,
-  ChromaDBStore,
-  PineconeStore,
-  createVectorStore,
-  HybridSearch,
-};
+export default { BaseVectorStore, MemoryVectorStore, ChromaDBStore, PineconeStore, createVectorStore, HybridSearch, simpleEmbedding };
