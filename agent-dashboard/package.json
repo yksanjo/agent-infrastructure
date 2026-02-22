@@ -1,0 +1,13 @@
+{
+  "name": "agent-dashboard",
+  "version": "1.0.0",
+  "description": "Web-based dashboard for monitoring agents, workflows, and real-time logs",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["dashboard", "monitoring", "agent-ui", "visualization"],
+  "author": "Yoshi Kondo",
+  "license": "MIT"
+}
